@@ -1,0 +1,9 @@
+{
+  "name": "HEB Store Match — Manager Placement",
+  "short_name": "Store Match",
+  "description": "Find the closest HEB stores by drive time for each partner in a cohort.",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "background_color": "#ee3124",
+  "theme_color": "#ee3124"
+}

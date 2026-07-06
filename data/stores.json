@@ -1,0 +1,329 @@
+{
+  "_note": "Official HEB store list imported from Store_Location_Table_1.xlsx. Coordinates included; no geocoding needed for stores.",
+  "source": "Store_Location_Table_1.xlsx",
+  "count": 46,
+  "stores": [
+    {
+      "id": 6,
+      "name": "STEPHENVILLE",
+      "address": "2150 W. WASHINGTON",
+      "lat": 32.20834,
+      "lon": -98.22529
+    },
+    {
+      "id": 16,
+      "name": "BURLESON - JOHN JONES/WILSHIRE",
+      "address": "165 N.W.JOHN JONES DR.",
+      "lat": 32.52083,
+      "lon": -97.34901
+    },
+    {
+      "id": 39,
+      "name": "BELTON     LAKE RD(FM430)/MAIN",
+      "address": "2509 NORTH MAIN STREET",
+      "lat": 31.0805,
+      "lon": -97.45759
+    },
+    {
+      "id": 51,
+      "name": "BIG SPRING",
+      "address": "2000 SOUTH GREGG",
+      "lat": 32.23444,
+      "lon": -101.47251
+    },
+    {
+      "id": 52,
+      "name": "SAN ANGELO  SHERWOOD/AVENUE N",
+      "address": "3301 SHERWOOD WAY",
+      "lat": 31.44393,
+      "lon": -100.47871
+    },
+    {
+      "id": 64,
+      "name": "WACO 04 19TH ST/PARK LAKE",
+      "address": "3801 N 19TH ST.",
+      "lat": 31.5804,
+      "lon": -97.17255
+    },
+    {
+      "id": 70,
+      "name": "ABILENE",
+      "address": "1345 BARROW",
+      "lat": 32.43348,
+      "lon": -99.75934
+    },
+    {
+      "id": 71,
+      "name": "TEMPLE 01 WEST ADAMS/25TH ST",
+      "address": "1314 WEST ADAMS",
+      "lat": 31.10153,
+      "lon": -97.35378
+    },
+    {
+      "id": 104,
+      "name": "MARLIN",
+      "address": "435 LIVE OAK",
+      "lat": 31.30715,
+      "lon": -96.89039
+    },
+    {
+      "id": 107,
+      "name": "ENNIS",
+      "address": "101 S. CLAY ST",
+      "lat": 32.32542,
+      "lon": -96.63251
+    },
+    {
+      "id": 182,
+      "name": "TEMPLE 02 31ST/LOOP 363",
+      "address": "3002 S 31 ST",
+      "lat": 31.07196,
+      "lon": -97.37015
+    },
+    {
+      "id": 238,
+      "name": "CORSICANA",
+      "address": "201 S. 15TH STREET",
+      "lat": 32.09047,
+      "lon": -96.46666
+    },
+    {
+      "id": 381,
+      "name": "HARKER HEIGHTS",
+      "address": "601 INDIAN TRAIL",
+      "lat": 31.07896,
+      "lon": -97.65443
+    },
+    {
+      "id": 382,
+      "name": "MIDLAND 01  W WADLEY/N MIDKIFF",
+      "address": "3325 WEST WADLEY",
+      "lat": 32.01797,
+      "lon": -102.12619
+    },
+    {
+      "id": 387,
+      "name": "ODESSA 01   E 42ND/N GRANDVIEW",
+      "address": "3801 E 42ND",
+      "lat": 31.89134,
+      "lon": -102.34383
+    },
+    {
+      "id": 403,
+      "name": "GATESVILLE",
+      "address": "1207 E.MAIN",
+      "lat": 31.43586,
+      "lon": -97.7428
+    },
+    {
+      "id": 423,
+      "name": "WACO 08 WOODED ACRE/BOSQUE",
+      "address": "1301 WOODED ACRES",
+      "lat": 31.53393,
+      "lon": -97.18817
+    },
+    {
+      "id": 426,
+      "name": "WAXAHACHIE",
+      "address": "800 HWY 77",
+      "lat": 32.41183,
+      "lon": -96.83981
+    },
+    {
+      "id": 467,
+      "name": "MEXIA",
+      "address": "701 E. MILAM STREET",
+      "lat": 31.68434,
+      "lon": -96.47858
+    },
+    {
+      "id": 557,
+      "name": "WACO 07 IH35/WACO DR",
+      "address": "801 NORTH I-H 35",
+      "lat": 31.58764,
+      "lon": -97.10723
+    },
+    {
+      "id": 581,
+      "name": "KILLEEN 03 190/TRIMMIER",
+      "address": "2511 TRIMMIER RD, SUITE 100",
+      "lat": 31.09103,
+      "lon": -97.73612
+    },
+    {
+      "id": 583,
+      "name": "WACO 05 HEWITT/HWY 84",
+      "address": "9100 WOODWAY DRIVE",
+      "lat": 31.49516,
+      "lon": -97.22183
+    },
+    {
+      "id": 631,
+      "name": "GRANBURY   MEANDER ROAD/SH377",
+      "address": "3804 US HWY 377",
+      "lat": 32.45767,
+      "lon": -97.72971
+    },
+    {
+      "id": 668,
+      "name": "COPPERAS COVE",
+      "address": "2990 EAST HWY 190",
+      "lat": 31.11872,
+      "lon": -97.86448
+    },
+    {
+      "id": 672,
+      "name": "WACO 01   IH35/VALLEY MILLS",
+      "address": "1821 SOUTH VALLEY MILLS DR.",
+      "lat": 31.52508,
+      "lon": -97.13916
+    },
+    {
+      "id": 679,
+      "name": "CLEBURNE",
+      "address": "600 W HENDERSON",
+      "lat": 32.34808,
+      "lon": -97.39471
+    },
+    {
+      "id": 711,
+      "name": "ODESSA 02   LOOP338/RTM2020",
+      "address": "2501 W UNIVERSITY BLVD",
+      "lat": 31.86213,
+      "lon": -102.41008
+    },
+    {
+      "id": 717,
+      "name": "MIDLAND 02  TX158E/TX250LOOP S",
+      "address": "5407 ANDREWS HIGHWAY",
+      "lat": 31.99588,
+      "lon": -102.15509
+    },
+    {
+      "id": 721,
+      "name": "KILLEEN 02 STAN SCHL/FORT HOOD",
+      "address": "1101 W. STAN SCHLUETER LOOP",
+      "lat": 31.08003,
+      "lon": -97.759
+    },
+    {
+      "id": 734,
+      "name": "SAN ANGELO 02 SHERWOOD/HOUSTON",
+      "address": "5502 SHERWOOD WAY",
+      "lat": 31.43158,
+      "lon": -100.51103
+    },
+    {
+      "id": 750,
+      "name": "MANSFIELD  US287 & BROAD ST.",
+      "address": "1670 E. BROAD ST.",
+      "lat": 32.56632,
+      "lon": -97.11372
+    },
+    {
+      "id": 752,
+      "name": "HUDSON OAKS",
+      "address": "100 HUDSON OAKS DR",
+      "lat": 32.75831,
+      "lon": -97.69733
+    },
+    {
+      "id": 772,
+      "name": "LUBBOCK 1  QUAKER/114TH ST",
+      "address": "4405 114TH STREET",
+      "lat": 33.48904,
+      "lon": -101.90611
+    },
+    {
+      "id": 787,
+      "name": "EFC #9 PLANO",
+      "address": "6001 PRESTON ROAD, SUITE 120",
+      "lat": 33.05554,
+      "lon": -96.79698
+    },
+    {
+      "id": 789,
+      "name": "FRISCO   LEGACY DR./MAIN ST.",
+      "address": "4800 MAIN STREET",
+      "lat": 33.15458,
+      "lon": -96.84583
+    },
+    {
+      "id": 790,
+      "name": "PLANO    PRESTON/SPRING CREEK",
+      "address": "6001 PRESTON ROAD SUITE 100",
+      "lat": 33.05497,
+      "lon": -96.79722
+    },
+    {
+      "id": 794,
+      "name": "MCKINNEY EL DORADO/CUSTER",
+      "address": "8700 ELDORADO PARKWAY",
+      "lat": 33.17604,
+      "lon": -96.72815
+    },
+    {
+      "id": 795,
+      "name": "FORNEY   Hwy 80 & Gateway",
+      "address": "11700 E. US Hwy 80",
+      "lat": 32.74265,
+      "lon": -96.41116
+    },
+    {
+      "id": 796,
+      "name": "ALLEN EXCH PRKWY/GREENVIL AVE.",
+      "address": "575 E. EXCHANGE PKWY",
+      "lat": 33.11754,
+      "lon": -96.65282
+    },
+    {
+      "id": 801,
+      "name": "ALLIANCE HERITAGE TRC/RIVERSDE",
+      "address": "3451 HERITAGE TRACE PARKWAY",
+      "lat": 32.91602,
+      "lon": -97.30807
+    },
+    {
+      "id": 802,
+      "name": "FRISCO 2   FM 423 & HWY 380",
+      "address": "899 UNIVERSITY DR.",
+      "lat": 33.21655,
+      "lon": -96.88292
+    },
+    {
+      "id": 808,
+      "name": "MELISSA",
+      "address": "1230 CENTRAL EXPRESSWAY",
+      "lat": 33.26765,
+      "lon": -96.59278
+    },
+    {
+      "id": 809,
+      "name": "PROSPER  FRONTIER/NDT",
+      "address": "2145 W. Frontier Pkwy",
+      "lat": 33.26139,
+      "lon": -96.81671
+    },
+    {
+      "id": 810,
+      "name": "ROCKWALL IH 30/S.JOHN KING BLV",
+      "address": "1600 E. Interstate 30",
+      "lat": 32.91427,
+      "lon": -96.43384
+    },
+    {
+      "id": 817,
+      "name": "Irving IH-635/Olympus Blvd",
+      "address": "2351 W. Interstate Hwy 635",
+      "lat": 32.92106,
+      "lon": -96.97719
+    },
+    {
+      "id": 819,
+      "name": "Mid Cities Cheek Sparger & RG",
+      "address": "2105 Rio Grande Blvd.",
+      "lat": 32.86723,
+      "lon": -97.106
+    }
+  ]
+}
