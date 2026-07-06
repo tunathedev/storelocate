@@ -1,7 +1,7 @@
 {
   "_note": "Official HEB store list imported from Store_Location_Table_1.xlsx. Coordinates included; no geocoding needed for stores.",
   "source": "Store_Location_Table_1.xlsx",
-  "count": 46,
+  "count": 45,
   "stores": [
     {
       "id": 6,
@@ -233,13 +233,6 @@
       "address": "4405 114TH STREET",
       "lat": 33.48904,
       "lon": -101.90611
-    },
-    {
-      "id": 787,
-      "name": "EFC #9 PLANO",
-      "address": "6001 PRESTON ROAD, SUITE 120",
-      "lat": 33.05554,
-      "lon": -96.79698
     },
     {
       "id": 789,
