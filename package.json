@@ -1,0 +1,12 @@
+{
+  "name": "heb-store-match",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Corporate HR tool: find the closest HEB stores by drive time for each partner in a cohort.",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}

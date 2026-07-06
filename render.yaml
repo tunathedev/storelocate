@@ -1,0 +1,13 @@
+# One-click deploy to Render (https://render.com) — free tier.
+# In Render: New → Blueprint → connect this repo → it reads this file.
+# The app has no dependencies to install; it just runs server.js.
+services:
+  - type: web
+    name: heb-store-match
+    runtime: node
+    plan: free
+    buildCommand: "echo no build needed"
+    startCommand: "node server.js"
+    envVars:
+      - key: NODE_VERSION
+        value: "20"
