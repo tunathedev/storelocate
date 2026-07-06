@@ -1,10 +1,16 @@
 /* HEB Store Match — manager placement tool
- * Flow: unlock (PIN 1905) → upload cohort → detect columns →
- *       geocode home addresses (US Census) → rank stores by straight-line →
- *       drive time for the nearest candidates (OSRM) → table + export.
+ * Flow: unlock (PIN 1905) → upload cohort → detect columns → geocode home
+ *       addresses → rank stores by straight-line → drive time for nearest
+ *       candidates → closest-store table + carpool groups → export.
  *
- * Privacy: runs entirely client-side. Home addresses go only to the U.S. Census
- * geocoder; OSRM receives coordinates only. Nothing is persisted to disk; the
+ * Geocoding / drive time uses one of two engines:
+ *   • Google Maps JS SDK  — when a key is set in config.js. Works fully in the
+ *     browser (CORS-safe), so it runs on a static host like GitHub Pages.
+ *   • US Census + OSRM     — via the same-origin proxy in server.js (Render /
+ *     local), with a direct-call fallback. No key needed.
+ *
+ * Privacy: runs client-side. Addresses go only to the chosen mapping service;
+ * routing between homes uses coordinates only. Nothing is written to disk — the
  * unlock flag and a geocode cache live in sessionStorage (cleared on tab close).
  */
 'use strict';
@@ -14,14 +20,18 @@ const MASTER_PIN = '1905';
 const NEAREST_CANDIDATES = 8;   // straight-line shortlist sent to the router
 const TOP_N = 3;                // stores shown per partner
 
-/* Try a same-origin proxy first (node server.js), then the public endpoint. */
+const CFG = window.STORELOCATE_CONFIG || {};
+const GKEY = (CFG.googleMapsKey || '').trim();
+const USE_GOOGLE = !!GKEY;
+
 const PROXY = { geocode: '/api/geocode', table: '/api/table' };
 const CENSUS = 'https://geocoding.geo.census.gov/geocoder/locations/onelineaddress';
 const OSRM = 'https://router.project-osrm.org/table/v1/driving/';
 
 let STORES = [];
-let parsed = null;   // { headers, rows }
-let results = [];    // computed matches
+let parsed = null;    // { headers, rows }
+let results = [];     // computed matches
+let CARPOOL = [];     // per-area carpool data
 
 /* ------------------------------------------------------------------ *
  * PIN lock
@@ -39,6 +49,9 @@ function unlock() {
   sessionStorage.setItem('hsm_unlocked', '1');
   $('lockScreen').style.display = 'none';
   $('app').hidden = false;
+  $('engineNote').textContent = USE_GOOGLE
+    ? 'Google Maps geocoding + drive time'
+    : 'Census geocoding + OSRM drive time';
   loadStores();
 }
 function lock() {
@@ -127,7 +140,8 @@ function buildMapping() {
 }
 
 /* ------------------------------------------------------------------ *
- * Geo helpers
+ * Geo engines — a common interface: Geo.init(), Geo.geocode(addr),
+ * Geo.matrix(origins, dests) → { minutes[][], miles[][] }.
  * ------------------------------------------------------------------ */
 function haversineMi(lat1, lon1, lat2, lon2) {
   const R = 3958.7613, toRad = (d) => d * Math.PI / 180;
@@ -135,52 +149,102 @@ function haversineMi(lat1, lon1, lat2, lon2) {
   const a = Math.sin(dLat / 2) ** 2 + Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.sin(dLon / 2) ** 2;
   return R * 2 * Math.asin(Math.sqrt(a));
 }
+function haversineMatrix(origins, dests) {  // ~35 mph estimate when routing is unavailable
+  const miles = origins.map((o) => dests.map((d) => haversineMi(o.lat, o.lon, d.lat, d.lon)));
+  const minutes = miles.map((row) => row.map((mi) => mi / 35 * 60));
+  return { minutes, miles, approx: true };
+}
 
-/* fetch JSON, preferring the same-origin proxy, falling back to the public API */
 async function fetchJSON(proxyUrl, directUrl) {
   try {
     const r = await fetch(proxyUrl, { cache: 'no-store' });
-    if (r.ok) {
-      const ct = r.headers.get('content-type') || '';
-      if (ct.includes('json')) return await r.json();
-    }
-  } catch (_) { /* proxy absent (e.g. static hosting) — fall through */ }
+    if (r.ok && (r.headers.get('content-type') || '').includes('json')) return await r.json();
+  } catch (_) { /* proxy absent (static hosting) — fall through */ }
   const r = await fetch(directUrl, { cache: 'no-store' });
   if (!r.ok) throw new Error('HTTP ' + r.status);
   return await r.json();
 }
 
+/* --- Google Maps JS SDK engine --- */
+let _gmaps = null;
+function loadGoogle() {
+  if (_gmaps) return _gmaps;
+  _gmaps = new Promise((res, rej) => {
+    if (window.google && window.google.maps) return res();
+    const s = document.createElement('script');
+    s.src = `https://maps.googleapis.com/maps/api/js?key=${encodeURIComponent(GKEY)}`;
+    s.async = true;
+    s.onload = () => (window.google && window.google.maps) ? res() : rej(new Error('Google Maps did not initialize'));
+    s.onerror = () => rej(new Error('Google Maps failed to load — check the API key / referrer restriction'));
+    document.head.appendChild(s);
+  });
+  return _gmaps;
+}
+function gGeocode(address) {
+  return new Promise((res) => {
+    new google.maps.Geocoder().geocode({ address }, (r, status) => {
+      if (status === 'OK' && r[0]) {
+        const l = r[0].geometry.location;
+        res({ lat: l.lat(), lon: l.lng(), matched: r[0].formatted_address });
+      } else res(null);
+    });
+  });
+}
+function gMatrix(origins, dests) {
+  return new Promise((res, rej) => {
+    new google.maps.DistanceMatrixService().getDistanceMatrix({
+      origins: origins.map((p) => ({ lat: p.lat, lng: p.lon })),
+      destinations: dests.map((p) => ({ lat: p.lat, lng: p.lon })),
+      travelMode: google.maps.TravelMode.DRIVING,
+      unitSystem: google.maps.UnitSystem.IMPERIAL,
+    }, (resp, status) => {
+      if (status !== 'OK') return rej(new Error('DistanceMatrix ' + status));
+      const minutes = resp.rows.map((row) => row.elements.map((e) => e.status === 'OK' ? e.duration.value / 60 : null));
+      const miles = resp.rows.map((row) => row.elements.map((e) => e.status === 'OK' ? e.distance.value / 1609.34 : null));
+      res({ minutes, miles });
+    });
+  });
+}
+
+/* --- US Census + OSRM engine (via proxy, direct fallback) --- */
+async function censusGeocode(address) {
+  const q = encodeURIComponent(address);
+  const d = await fetchJSON(`${PROXY.geocode}?address=${q}`,
+    `${CENSUS}?address=${q}&benchmark=Public_AR_Current&format=json`);
+  const m = d && d.result && d.result.addressMatches && d.result.addressMatches[0];
+  return m ? { lat: m.coordinates.y, lon: m.coordinates.x, matched: m.matchedAddress } : null;
+}
+async function osrmMatrix(origins, dests) {
+  const pts = [...origins, ...dests];
+  const coords = pts.map((p) => `${p.lon},${p.lat}`).join(';');
+  const sources = origins.map((_, i) => i).join(';');
+  const destinations = dests.map((_, i) => origins.length + i).join(';');
+  const d = await fetchJSON(
+    `${PROXY.table}?coords=${encodeURIComponent(coords)}&sources=${sources}&destinations=${destinations}`,
+    `${OSRM}${coords}?sources=${sources}&destinations=${destinations}&annotations=duration,distance`);
+  if (!d || d.code !== 'Ok') throw new Error('routing failed');
+  const minutes = d.durations.map((row) => row.map((s) => s == null ? null : s / 60));
+  const miles = d.distances ? d.distances.map((row) => row.map((s) => s == null ? null : s / 1609.34))
+    : minutes.map((row) => row.map(() => null));
+  return { minutes, miles };
+}
+
+const Geo = {
+  init: () => USE_GOOGLE ? loadGoogle() : Promise.resolve(),
+  rawGeocode: USE_GOOGLE ? gGeocode : censusGeocode,
+  matrix: USE_GOOGLE ? gMatrix : osrmMatrix,
+};
 async function geocode(address) {
   const key = 'geo:' + address.toLowerCase().replace(/\s+/g, ' ');
   const cached = sessionStorage.getItem(key);
   if (cached) return JSON.parse(cached);
-
-  const q = encodeURIComponent(address);
-  const proxyUrl = `${PROXY.geocode}?address=${q}`;
-  const directUrl = `${CENSUS}?address=${q}&benchmark=Public_AR_Current&format=json`;
-  const d = await fetchJSON(proxyUrl, directUrl);
-  const m = d && d.result && d.result.addressMatches && d.result.addressMatches[0];
-  const out = m ? { lat: m.coordinates.y, lon: m.coordinates.x, matched: m.matchedAddress } : null;
+  const out = await Geo.rawGeocode(address);
   if (out) sessionStorage.setItem(key, JSON.stringify(out));
   return out;
 }
 
-/* OSRM table: durations & distances from one origin to K store coords */
-async function driveTimes(origin, stores) {
-  const coords = [origin, ...stores].map((p) => `${p.lon},${p.lat}`).join(';');
-  const dest = stores.map((_, i) => i + 1).join(';');
-  const proxyUrl = `${PROXY.table}?coords=${encodeURIComponent(coords)}&sources=0&destinations=${dest}`;
-  const directUrl = `${OSRM}${coords}?sources=0&destinations=${dest}&annotations=duration,distance`;
-  const d = await fetchJSON(proxyUrl, directUrl);
-  if (!d || d.code !== 'Ok') throw new Error('routing failed');
-  return stores.map((_, i) => ({
-    minutes: d.durations[0][i] != null ? d.durations[0][i] / 60 : null,
-    miles: d.distances && d.distances[0][i] != null ? d.distances[0][i] / 1609.34 : null,
-  }));
-}
-
 /* ------------------------------------------------------------------ *
- * Run
+ * Run — closest stores per partner
  * ------------------------------------------------------------------ */
 $('runBtn').addEventListener('click', run);
 
@@ -192,7 +256,17 @@ async function run() {
   $('uploadPanel').hidden = true;
   $('progressPanel').hidden = false;
   $('resultsPanel').hidden = true;
+  $('carpoolPanel').hidden = true;
   results = [];
+
+  try {
+    setProgress(0, 'Loading map service…');
+    await Geo.init();
+  } catch (err) {
+    setProgress(0, '');
+    $('progressText').innerHTML = `<span class="err">Map service failed to load: ${escapeHtml(err.message)}</span>`;
+    return;
+  }
 
   for (let i = 0; i < people.length; i++) {
     const p = people[i];
@@ -209,11 +283,11 @@ async function run() {
       let matches;
       if (useDrive) {
         try {
-          const dt = await driveTimes(geo, shortlist.map((c) => c.store));
-          matches = shortlist.map((c, j) => ({ ...c, ...dt[j] }))
+          const mx = await Geo.matrix([geo], shortlist.map((c) => c.store));
+          matches = shortlist.map((c, j) => ({ ...c, minutes: mx.minutes[0][j], miles: mx.miles[0][j] }))
             .sort((a, b) => (a.minutes ?? 1e9) - (b.minutes ?? 1e9));
         } catch (_) {
-          matches = shortlist.map((c) => ({ ...c, minutes: null, miles: null, driveFailed: true }));
+          matches = shortlist.map((c) => ({ ...c, minutes: null, miles: null }));
         }
       } else {
         matches = shortlist;
@@ -224,13 +298,104 @@ async function run() {
     }
   }
 
-  setProgress(1, 'Done');
+  setProgress(1, 'Grouping carpools…');
   renderResults();
+  await computeCarpools();
+  $('progressPanel').hidden = true;
 }
 
 function setProgress(frac, text) {
   $('progressBar').style.width = Math.round(frac * 100) + '%';
   $('progressText').textContent = text;
+}
+
+/* ------------------------------------------------------------------ *
+ * Carpools — group partners within the same Area whose homes are within
+ * the chosen drive-time threshold of each other.
+ * ------------------------------------------------------------------ */
+async function computeCarpools() {
+  const byArea = {};
+  results.forEach((r) => { if (r.geo) (byArea[(r.area || '(no area)').trim()] ||= []).push(r); });
+  CARPOOL = [];
+  const areas = Object.entries(byArea);
+  for (let a = 0; a < areas.length; a++) {
+    const [area, members] = areas[a];
+    const entry = { area, members, mins: null, approx: false };
+    if (members.length >= 2) {
+      const pts = members.map((m) => m.geo);
+      try {
+        if (USE_GOOGLE && pts.length * pts.length > 100) throw new Error('matrix too large');
+        entry.mins = (await Geo.matrix(pts, pts)).minutes;
+      } catch (_) {
+        entry.mins = haversineMatrix(pts, pts).minutes;
+        entry.approx = true;
+      }
+    }
+    CARPOOL.push(entry);
+  }
+  renderCarpools();
+}
+
+$('carpoolThreshold').addEventListener('change', renderCarpools);
+
+function renderCarpools() {
+  const thr = +$('carpoolThreshold').value;
+  results.forEach((r) => { r._carpool = ''; });
+  let groupCount = 0, pairedCount = 0, soloCount = 0;
+
+  const blocks = CARPOOL.map((entry) => {
+    const { area, members, mins, approx } = entry;
+    let groups = [], singles = members.slice();
+
+    if (members.length >= 2 && mins) {
+      const n = members.length, parent = [...Array(n).keys()];
+      const find = (x) => { while (parent[x] !== x) { parent[x] = parent[parent[x]]; x = parent[x]; } return x; };
+      for (let i = 0; i < n; i++) for (let j = i + 1; j < n; j++) {
+        const t = Math.min(mins[i][j] ?? 1e9, mins[j][i] ?? 1e9);
+        if (t <= thr) parent[find(i)] = find(j);
+      }
+      const comp = {};
+      for (let i = 0; i < n; i++) (comp[find(i)] ||= []).push(i);
+      const parts = Object.values(comp);
+      groups = parts.filter((g) => g.length >= 2).map((g) => {
+        let maxLeg = 0;
+        for (const x of g) for (const y of g) if (x !== y) {
+          const t = Math.min(mins[x][y] ?? 1e9, mins[y][x] ?? 1e9);
+          if (t < 1e9) maxLeg = Math.max(maxLeg, t);
+        }
+        return { idxs: g, members: g.map((i) => members[i]), maxLeg };
+      });
+      singles = parts.filter((g) => g.length === 1).map((g) => members[g[0]]);
+    }
+
+    groups.forEach((g, gi) => {
+      const label = `${area} · Group ${String.fromCharCode(65 + gi)}`;
+      g.members.forEach((m) => { m._carpool = label; });
+      groupCount++; pairedCount += g.members.length;
+    });
+    singles.forEach((m) => { m._carpool = 'Solo'; });
+    soloCount += singles.length;
+    return areaBlock(area, groups, singles, approx);
+  }).join('');
+
+  $('carpoolContainer').innerHTML = blocks || '<p class="muted">No geocoded partners to group.</p>';
+  $('carpoolSummary').textContent =
+    `${groupCount} carpool${groupCount === 1 ? '' : 's'} · ${pairedCount} paired · ${soloCount} solo`;
+  $('carpoolPanel').hidden = false;
+}
+
+function areaBlock(area, groups, singles, approx) {
+  const gHtml = groups.map((g, gi) => `
+    <div class="cp-group">
+      <div class="cp-group-head"><span class="cp-badge">${String.fromCharCode(65 + gi)}</span>
+        ${g.members.length} partners · <span class="muted">within ${fmtMin(g.maxLeg)}${approx ? ' (est.)' : ''}</span></div>
+      <ul class="cp-members">${g.members.map((m) =>
+        `<li><span class="cp-dot"></span>${escapeHtml(m.name)} <span class="muted">— ${escapeHtml(m.address)}</span></li>`).join('')}</ul>
+    </div>`).join('');
+  const sHtml = singles.length
+    ? `<div class="cp-solo"><span class="muted">Solo (no nearby match):</span> ${singles.map((m) => escapeHtml(m.name)).join(', ')}</div>`
+    : '';
+  return `<div class="cp-area"><h3>${escapeHtml(area)}</h3>${gHtml || '<p class="muted">No pairs within range.</p>'}${sHtml}</div>`;
 }
 
 /* ------------------------------------------------------------------ *
@@ -267,15 +432,15 @@ function renderResults() {
 
   const ok = results.filter((r) => !r.error).length;
   $('resultsSummary').textContent = `${ok}/${results.length} matched`;
-  $('progressPanel').hidden = true;
   $('resultsPanel').hidden = false;
 }
 
 function exportRows() {
-  const rows = [['Partner Name', 'Area', 'Home Address']];
-  for (let i = 1; i <= TOP_N; i++) rows[0].push(`Store ${i}`, `Store ${i} ID`, `Store ${i} Drive (min)`, `Store ${i} Miles`);
+  const head = ['Partner Name', 'Area', 'Carpool Group', 'Home Address'];
+  for (let i = 1; i <= TOP_N; i++) head.push(`Store ${i}`, `Store ${i} ID`, `Store ${i} Drive (min)`, `Store ${i} Miles`);
+  const rows = [head];
   for (const r of results) {
-    const row = [r.name, r.area, r.address];
+    const row = [r.name, r.area, r._carpool || '', r.address];
     for (let i = 0; i < TOP_N; i++) {
       const m = r.top && r.top[i];
       if (m) row.push(titleCase(m.store.name), m.store.id,

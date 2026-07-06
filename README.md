@@ -19,15 +19,27 @@ each person it returns the **3 closest HEB stores by drive time**.
 2. **Upload** a `.xlsx` / `.xls` / `.csv` cohort. Columns for name, area, and
    home address are auto-detected (and can be corrected in a dropdown).
 3. For each partner it:
-   - geocodes the home address (**U.S. Census** — free, no key),
+   - geocodes the home address,
    - ranks all stores by straight-line distance,
-   - measures **drive time + drive distance** to the nearest candidates
-     (**OSRM** — free, no key), and
+   - measures **drive time + drive distance** to the nearest candidates, and
    - shows the **3 closest** stores, sorted by drive time.
-4. **Export** the results as CSV or Excel.
+4. **Suggests carpools** — groups partners in the same Area whose homes are
+   within an adjustable drive-time threshold (10/15/20/30 min) of each other.
+5. **Export** results (incl. the carpool group) as CSV or Excel.
 
 The input matches the `SORL_26B_Cohort` layout: `Partner Name`, `Area`,
 `Home Location`.
+
+## Geocoding engine
+
+Two interchangeable engines (chosen automatically):
+
+- **Google Maps** — set a key in `config.js`. Runs geocoding + drive time in the
+  browser (CORS-safe), so it works on a static host like **GitHub Pages**.
+- **U.S. Census + OSRM** — the default when no key is set. Free, no key, but
+  needs `server.js` (local / Render) to proxy around browser CORS limits.
+
+See `DEPLOY.md` for hosting and how to create a restricted Google key.
 
 ## Run it
 

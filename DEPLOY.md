@@ -18,22 +18,42 @@ never touch a third-party CDN. No dependencies to install.
 > Free-tier Render services sleep after inactivity and take ~30s to wake on the
 > first hit — fine for occasional HR use.
 
-## Option B — GitHub Pages (fastest link, but two caveats)
+## Option B — GitHub Pages + Google Maps key (static, no server)
 
-Serves the static files with no server, so the app falls back to calling Census
-and OSRM **directly from the browser**.
+GitHub Pages serves static files only — there's no proxy — and the **U.S. Census
+geocoder blocks direct browser calls (CORS)**, so on Pages you'll see
+"Lookup failed: Load failed" on every row unless you supply a **Google Maps key**.
+Google's Maps JS SDK is built for browser use, so geocoding + drive time work
+client-side with a key.
 
-1. Repo **Settings → Pages → Build from branch →** `main` (after this PR merges),
-   folder `/ (root)`. Save.
-2. Wait ~1 minute; the URL is `https://tunathedev.github.io/storelocate/`.
+**1. Create a Google Maps API key (safely):**
+   - In the [Google Cloud console](https://console.cloud.google.com), create a
+     project and enable: **Maps JavaScript API**, **Geocoding API**,
+     **Distance Matrix API**.
+   - Create an **API key**, then **restrict** it:
+     - *Application restrictions* → **HTTP referrers** →
+       `https://tunathedev.github.io/*`
+     - *API restrictions* → the three APIs above only.
+     - Set a **daily quota cap** so a leaked key can't run up a bill.
+   - A referrer-restricted key only works from your site, so it's safe to publish.
+
+**2. Put the key in `config.js`:**
+   ```js
+   window.STORELOCATE_CONFIG = { googleMapsKey: "YOUR_KEY_HERE" };
+   ```
+   Commit it.
+
+**3. Enable Pages:** Repo **Settings → Pages → Build from branch →** `main`,
+   folder `/ (root)`. Save. In ~1 minute the URL is
+   `https://tunathedev.github.io/storelocate/`.
 
 Caveats:
-- **CORS:** the U.S. Census geocoder does not reliably send CORS headers, so
-  browser-side geocoding may be blocked — in which case matches fail and Option A
-  is the fix.
-- **Public:** GitHub Pages on a free plan is public, so the page and the store
-  list would be reachable by anyone with the link (the PIN is a soft gate, not
-  real access control — see below).
+- **Public:** free Pages is public, so the page + store list are reachable by
+  anyone with the link (the PIN is a soft gate — see below).
+- **Privacy:** with a Google key, home addresses are geocoded by **Google**
+  rather than the U.S. Census. Option A (Render) keeps geocoding on Census.
+- If `config.js` has **no** key, the app uses the Census/OSRM proxy — which only
+  exists when `server.js` is running (Option A / local), not on Pages.
 
 ## About the PIN
 
