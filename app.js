@@ -181,12 +181,17 @@ function loadGoogle() {
   return _gmaps;
 }
 function gGeocode(address) {
-  return new Promise((res) => {
+  return new Promise((res, rej) => {
     new google.maps.Geocoder().geocode({ address }, (r, status) => {
       if (status === 'OK' && r[0]) {
         const l = r[0].geometry.location;
         res({ lat: l.lat(), lon: l.lng(), matched: r[0].formatted_address });
-      } else res(null);
+      } else if (status === 'ZERO_RESULTS') {
+        res(null);                                   // genuinely no match for this address
+      } else {
+        // REQUEST_DENIED (API not enabled / bad key), OVER_QUERY_LIMIT, etc.
+        rej(new Error('Google geocoder: ' + status));
+      }
     });
   });
 }
@@ -234,11 +239,18 @@ const Geo = {
   rawGeocode: USE_GOOGLE ? gGeocode : censusGeocode,
   matrix: USE_GOOGLE ? gMatrix : osrmMatrix,
 };
+function cleanAddress(a) {
+  return String(a || '')
+    .replace(/\s+/g, ' ')                    // collapse runs of whitespace
+    .replace(/,(?=\S)/g, ', ')               // ensure a space after commas
+    .trim();
+}
 async function geocode(address) {
-  const key = 'geo:' + address.toLowerCase().replace(/\s+/g, ' ');
+  const clean = cleanAddress(address);
+  const key = 'geo:' + clean.toLowerCase();
   const cached = sessionStorage.getItem(key);
   if (cached) return JSON.parse(cached);
-  const out = await Geo.rawGeocode(address);
+  const out = await Geo.rawGeocode(clean);
   if (out) sessionStorage.setItem(key, JSON.stringify(out));
   return out;
 }
