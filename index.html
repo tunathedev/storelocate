@@ -8,6 +8,8 @@
 
 <!-- Vendored spreadsheet parser (no CDN, works offline) -->
 <script src="vendor/xlsx.full.min.js"></script>
+<!-- Runtime config (Google Maps key for static hosting) -->
+<script src="config.js"></script>
 
 <!-- ===================== PIN LOCK ===================== -->
 <div class="lock" id="lockScreen">
@@ -49,8 +51,8 @@
   <main class="wrap">
     <div class="privacy-banner">
       <strong>Confidential.</strong> This assigns new managers to stores using partner home addresses.
-      Addresses are geocoded via the U.S. Census (government) service and drive times via OSRM;
-      only the resulting coordinates — never names — are sent for routing. Nothing is written to disk.
+      Addresses are geocoded and drive times computed via a mapping service; routing between homes
+      uses coordinates only — never names. Nothing is written to disk.
     </div>
 
     <!-- Upload panel -->
@@ -110,6 +112,25 @@
           <tbody id="resultsBody"></tbody>
         </table>
       </div>
+    </section>
+
+    <!-- Carpools -->
+    <section class="panel" id="carpoolPanel" hidden>
+      <div class="results-head">
+        <h2>4 · Suggested carpools</h2>
+        <div class="results-actions">
+          <label class="chk">Group homes within
+            <select id="carpoolThreshold">
+              <option value="10">10 min</option>
+              <option value="15" selected>15 min</option>
+              <option value="20">20 min</option>
+              <option value="30">30 min</option>
+            </select> drive</label>
+          <span class="muted" id="carpoolSummary"></span>
+        </div>
+      </div>
+      <p class="muted">Partners in the same Area who live close enough to ride together. Grouping is exported in the "Carpool Group" column.</p>
+      <div id="carpoolContainer"></div>
     </section>
   </main>
 

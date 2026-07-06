@@ -50,11 +50,12 @@ const server = http.createServer(async (req, res) => {
   // --- routing proxy (OSRM table) ---
   if (u.pathname === '/api/table') {
     const coords = u.searchParams.get('coords') || '';
-    const sources = u.searchParams.get('sources') || '0';
+    const sources = u.searchParams.get('sources') || '';
     const destinations = u.searchParams.get('destinations') || '';
     if (!coords) return sendJSON(res, 400, { error: 'coords required' });
     let target = `https://router.project-osrm.org/table/v1/driving/${coords}`
-      + `?sources=${sources}&annotations=duration,distance`;
+      + `?annotations=duration,distance`;
+    if (sources) target += `&sources=${sources}`;
     if (destinations) target += `&destinations=${destinations}`;
     try { const r = await get(target); return sendJSON(res, r.status, r.body); }
     catch (e) { return sendJSON(res, 502, { error: String(e) }); }
