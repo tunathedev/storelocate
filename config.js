@@ -16,5 +16,5 @@
  * A referrer-restricted key only works from your site, so publishing it is safe.
  */
 window.STORELOCATE_CONFIG = {
-  googleMapsKey: ""
+  googleMapsKey: "AIzaSyB57FEnvM72GfGmbyxoL5dnJi7QfyKsjnk"
 };
